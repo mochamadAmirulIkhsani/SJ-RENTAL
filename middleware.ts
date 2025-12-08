@@ -3,7 +3,7 @@ import type { NextRequest } from "next/server";
 import { verifyTokenEdge } from "./lib/auth-edge";
 
 // Path yang tidak memerlukan authentication
-const publicPaths = ["/login", "/register", "/"];
+const publicPaths = ["/login", "/register", "/", "/home", "/motors"];
 
 // Path yang hanya bisa diakses admin
 const adminPaths = ["/admin"];
@@ -27,9 +27,9 @@ export async function middleware(request: NextRequest) {
   console.log(`[Middleware] Path: ${pathname}, Token exists: ${!!token}`);
 
   if (!token) {
-    console.log(`[Middleware] No token, redirecting to /login`);
-    // Redirect ke login jika tidak ada token
-    return NextResponse.redirect(new URL("/login", request.url));
+    console.log(`[Middleware] No token, redirecting to /home`);
+    // Redirect ke home (customer landing) jika tidak ada token
+    return NextResponse.redirect(new URL("/home", request.url));
   }
 
   // Verify token (async untuk Edge Runtime)
