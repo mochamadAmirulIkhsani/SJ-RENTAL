@@ -11,31 +11,33 @@ export function CustomerNavbar() {
   const { user, logout } = useAuth();
 
   return (
-    <nav className="border-b bg-white sticky top-0 z-50">
-      <div className="container mx-auto px-4">
-        <div className="flex h-16 items-center justify-between">
-          <Link href="/" className="flex items-center space-x-2">
-            <div className="font-bold text-xl" style={{ color: "#0A2540" }}>
-              SJRent
+    <nav className="sticky top-0 z-50 border-b border-border bg-card/80 backdrop-blur-md">
+      <div className="container mx-auto max-w-6xl px-4">
+        <div className="flex h-20 items-center justify-between">
+          <Link href="/" className="flex items-center space-x-2 transition-opacity hover:opacity-80">
+            <div className="font-serif text-2xl font-semibold text-foreground">
+              SJ<span className="gradient-text">Rent</span>
             </div>
           </Link>
 
-          <div className="hidden md:flex items-center space-x-8">
-            <Link href="/" className="text-sm font-medium hover:text-[#1ABC9C] transition-colors">
+          <div className="hidden items-center space-x-8 md:flex">
+            <Link href="/" className="text-sm font-medium text-muted-foreground transition-colors hover:text-accent">
               Home
             </Link>
-            <Link href="/motors" className="text-sm font-medium hover:text-[#1ABC9C] transition-colors">
+            <Link href="/motors" className="text-sm font-medium text-muted-foreground transition-colors hover:text-accent">
               Available Motors
             </Link>
-            <Link href="/booking" className="text-sm font-medium hover:text-[#1ABC9C] transition-colors">
+            <Link href="/booking" className="text-sm font-medium text-muted-foreground transition-colors hover:text-accent">
               Book Now
             </Link>
-            <Link href="/my-bookings" className="text-sm font-medium hover:text-[#1ABC9C] transition-colors">
-              My Bookings
-            </Link>
+            {user && (
+              <Link href="/my-bookings" className="text-sm font-medium text-muted-foreground transition-colors hover:text-accent">
+                My Bookings
+              </Link>
+            )}
           </div>
 
-          <div className="hidden md:flex items-center space-x-4">
+          <div className="hidden items-center space-x-3 md:flex">
             {user ? (
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
@@ -44,7 +46,7 @@ export function CustomerNavbar() {
                     {user.name || user.email}
                   </Button>
                 </DropdownMenuTrigger>
-                <DropdownMenuContent align="end">
+                <DropdownMenuContent align="end" className="w-56">
                   <DropdownMenuLabel>My Account</DropdownMenuLabel>
                   <DropdownMenuSeparator />
                   <DropdownMenuItem asChild>
@@ -52,7 +54,7 @@ export function CustomerNavbar() {
                   </DropdownMenuItem>
                   <DropdownMenuItem>Profile</DropdownMenuItem>
                   <DropdownMenuSeparator />
-                  <DropdownMenuItem onClick={logout} className="text-red-600">
+                  <DropdownMenuItem onClick={logout} className="text-destructive">
                     <LogOut className="mr-2 h-4 w-4" />
                     Logout
                   </DropdownMenuItem>
@@ -66,7 +68,7 @@ export function CustomerNavbar() {
                     Sign In
                   </Link>
                 </Button>
-                <Button size="sm" style={{ backgroundColor: "#1ABC9C" }} className="hover:opacity-90" asChild>
+                <Button size="sm" asChild>
                   <Link href="/register">Sign Up</Link>
                 </Button>
               </>
@@ -75,28 +77,30 @@ export function CustomerNavbar() {
 
           <Sheet>
             <SheetTrigger asChild className="md:hidden">
-              <Button variant="ghost" size="sm">
+              <Button variant="ghost" size="icon-sm">
                 <Menu className="h-5 w-5" />
               </Button>
             </SheetTrigger>
             <SheetContent>
-              <div className="flex flex-col space-y-4 mt-8">
-                <Link href="/" className="text-sm font-medium">
+              <div className="mt-8 flex flex-col space-y-4">
+                <Link href="/" className="text-sm font-medium transition-colors hover:text-accent">
                   Home
                 </Link>
-                <Link href="/motors" className="text-sm font-medium">
+                <Link href="/motors" className="text-sm font-medium transition-colors hover:text-accent">
                   Available Motors
                 </Link>
-                <Link href="/booking" className="text-sm font-medium">
+                <Link href="/booking" className="text-sm font-medium transition-colors hover:text-accent">
                   Book Now
                 </Link>
-                <Link href="/my-bookings" className="text-sm font-medium">
-                  My Bookings
-                </Link>
+                {user && (
+                  <Link href="/my-bookings" className="text-sm font-medium transition-colors hover:text-accent">
+                    My Bookings
+                  </Link>
+                )}
                 {user ? (
                   <>
-                    <div className="text-sm font-medium text-gray-600">{user.name || user.email}</div>
-                    <Button variant="ghost" size="sm" className="justify-start text-red-600" onClick={logout}>
+                    <div className="text-sm font-medium text-muted-foreground">{user.name || user.email}</div>
+                    <Button variant="ghost" size="sm" className="justify-start text-destructive" onClick={logout}>
                       <LogOut className="mr-2 h-4 w-4" />
                       Logout
                     </Button>
@@ -109,7 +113,7 @@ export function CustomerNavbar() {
                         Sign In
                       </Link>
                     </Button>
-                    <Button size="sm" style={{ backgroundColor: "#1ABC9C" }} asChild>
+                    <Button size="sm" asChild>
                       <Link href="/register">Sign Up</Link>
                     </Button>
                   </>
