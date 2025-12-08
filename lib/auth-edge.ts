@@ -14,7 +14,13 @@ export interface JWTPayload {
 export async function verifyTokenEdge(token: string): Promise<JWTPayload | null> {
   try {
     const { payload } = await jose.jwtVerify(token, JWT_SECRET);
-    return payload as JWTPayload;
+
+    // Validate payload has required fields
+    if (payload && typeof payload.userId === "number" && typeof payload.email === "string" && typeof payload.role === "string") {
+      return payload as unknown as JWTPayload;
+    }
+
+    return null;
   } catch (error) {
     console.error("[verifyTokenEdge] Token verification failed:", error instanceof Error ? error.message : error);
     return null;
