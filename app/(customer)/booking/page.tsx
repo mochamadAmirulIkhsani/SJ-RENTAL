@@ -14,10 +14,24 @@ import { CalendarIcon, CreditCard, MapPin, User } from "lucide-react";
 import { format } from "date-fns";
 import { useState } from "react";
 import { cn } from "@/lib/utils";
+import { useAuth } from "@/lib/AuthContext";
+import { useRouter } from "next/navigation";
 
 export default function BookingPage() {
   const [startDate, setStartDate] = useState<Date>();
   const [endDate, setEndDate] = useState<Date>();
+  const { user } = useAuth();
+  const router = useRouter();
+
+  const handleProceedToPayment = () => {
+    if (!user) {
+      // Redirect to login if not logged in
+      router.push("/login");
+      return;
+    }
+    // Proceed to payment/confirmation page
+    router.push("/confirmation");
+  };
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -228,9 +242,9 @@ export default function BookingPage() {
                       </span>
                     </div>
 
-                    <Button className="w-full" size="lg" style={{ backgroundColor: "#1ABC9C" }}>
+                    <Button className="w-full" size="lg" style={{ backgroundColor: "#1ABC9C" }} onClick={handleProceedToPayment}>
                       <CreditCard className="mr-2 h-5 w-5" />
-                      Proceed to Payment
+                      {user ? "Proceed to Payment" : "Login to Continue"}
                     </Button>
                   </div>
 
