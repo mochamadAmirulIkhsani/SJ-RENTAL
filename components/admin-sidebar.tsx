@@ -1,11 +1,14 @@
 "use client";
 
+import { useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { cn } from "@/lib/utils";
-import { LayoutDashboard, Bike, Calendar, ClipboardCheck, Package, Users, FileText, Shield, Settings, LogOut } from "lucide-react";
+import { LayoutDashboard, Bike, Calendar, ClipboardCheck, Package, Users, FileText, Shield, Settings, LogOut, Menu, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
+import { Sheet, SheetContent, SheetTrigger, SheetTitle } from "@/components/ui/sheet";
+import { VisuallyHidden } from "@radix-ui/react-visually-hidden";
 
 const menuItems = [
   { href: "/admin", icon: LayoutDashboard, label: "Dashboard" },
@@ -21,9 +24,10 @@ const menuItems = [
 
 export function AdminSidebar() {
   const pathname = usePathname();
+  const [open, setOpen] = useState(false);
 
-  return (
-    <div className="flex h-screen w-64 flex-col fixed left-0 top-0 border-r bg-white">
+  const SidebarContent = () => (
+    <>
       <div className="flex h-16 items-center px-6 border-b">
         <Link href="/admin" className="flex items-center space-x-2">
           <div className="font-bold text-xl" style={{ color: "#0A2540" }}>
@@ -38,7 +42,12 @@ export function AdminSidebar() {
             const Icon = item.icon;
             const isActive = pathname === item.href;
             return (
-              <Link key={item.href} href={item.href} className={cn("flex items-center space-x-3 px-3 py-2 rounded-md text-sm font-medium transition-colors", isActive ? "bg-[#1ABC9C] text-white" : "text-gray-700 hover:bg-gray-100")}>
+              <Link
+                key={item.href}
+                href={item.href}
+                onClick={() => setOpen(false)}
+                className={cn("flex items-center space-x-3 px-3 py-2 rounded-md text-sm font-medium transition-colors", isActive ? "bg-[#1ABC9C] text-white" : "text-gray-700 hover:bg-gray-100")}
+              >
                 <Icon className="h-5 w-5" />
                 <span>{item.label}</span>
               </Link>
@@ -53,6 +62,32 @@ export function AdminSidebar() {
           Logout
         </Button>
       </div>
-    </div>
+    </>
+  );
+
+  return (
+    <>
+      {/* Mobile Menu Button */}
+      <Sheet open={open} onOpenChange={setOpen}>
+        <SheetTrigger asChild>
+          <Button variant="outline" size="icon" className="fixed top-3 left-3 z-50 lg:hidden h-10 w-10">
+            <Menu className="h-5 w-5" />
+          </Button>
+        </SheetTrigger>
+        <SheetContent side="left" className="p-0 w-64 sm:w-72">
+          <VisuallyHidden>
+            <SheetTitle>Navigation Menu</SheetTitle>
+          </VisuallyHidden>
+          <div className="flex h-screen flex-col">
+            <SidebarContent />
+          </div>
+        </SheetContent>
+      </Sheet>
+
+      {/* Desktop Sidebar - 16rem = 256px */}
+      <div className="hidden lg:flex h-screen w-64 flex-col fixed left-0 top-0 border-r bg-white z-40">
+        <SidebarContent />
+      </div>
+    </>
   );
 }

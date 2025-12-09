@@ -25,10 +25,10 @@ export default function ReportsPage() {
     <div className="flex min-h-screen bg-gray-50">
       <AdminSidebar />
 
-      <div className="flex-1 ml-64">
-        <AdminHeader title="Reports Module" />
+      <div className="flex-1 w-full lg:ml-64">
+        <AdminHeader title="Reports & Analytics" />
 
-        <div className="p-8">
+        <div className="p-3 sm:p-4 lg:p-6 xl:p-8">
           <Tabs defaultValue="generate" className="space-y-6">
             <TabsList>
               <TabsTrigger value="generate">Generate Reports</TabsTrigger>

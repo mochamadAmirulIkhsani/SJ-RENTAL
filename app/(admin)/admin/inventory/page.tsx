@@ -204,10 +204,10 @@ export default function InventoryPage() {
     <div className="flex min-h-screen bg-gray-50">
       <AdminSidebar />
 
-      <div className="flex-1 ml-64">
+      <div className="flex-1 w-full lg:ml-64">
         <AdminHeader title="Motor Inventory Management" />
 
-        <div className="p-8">
+        <div className="p-3 sm:p-4 lg:p-6 xl:p-8">
           <Tabs defaultValue="list" className="space-y-6">
             <TabsList>
               <TabsTrigger value="list">Motor List</TabsTrigger>
@@ -215,9 +215,9 @@ export default function InventoryPage() {
               <TabsTrigger value="maintenance">Maintenance Schedule</TabsTrigger>
             </TabsList>
 
-            <TabsContent value="list" className="space-y-6">
+            <TabsContent value="list" className="space-y-4 sm:space-y-6">
               {/* Stats */}
-              <div className="grid md:grid-cols-4 gap-6">
+              <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-3 sm:gap-4 lg:gap-6">
                 <Card>
                   <CardHeader className="pb-2">
                     <CardTitle className="text-sm font-medium text-gray-600">Total Motors</CardTitle>
@@ -421,97 +421,103 @@ export default function InventoryPage() {
                     </Dialog>
                   </div>
                 </CardHeader>
-                <CardContent>
-                  <Table>
-                    <TableHeader>
-                      <TableRow>
-                        <TableHead>No</TableHead>
-                        <TableHead>Name</TableHead>
-                        <TableHead>Brand</TableHead>
-                        <TableHead>Plate Number</TableHead>
-                        <TableHead>Year</TableHead>
-                        <TableHead>Daily Rate</TableHead>
-                        <TableHead>Status</TableHead>
-                        <TableHead>Actions</TableHead>
-                      </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                      {loading ? (
-                        <TableRow>
-                          <TableCell colSpan={8} className="text-center py-8">
-                            <Loader2 className="h-8 w-8 animate-spin mx-auto" />
-                          </TableCell>
-                        </TableRow>
-                      ) : motors.length === 0 ? (
-                        <TableRow>
-                          <TableCell colSpan={8} className="text-center py-8 text-gray-500">
-                            No motors found
-                          </TableCell>
-                        </TableRow>
-                      ) : (
-                        currentMotors.map((motor, index) => (
-                          <TableRow key={motor.id}>
-                            <TableCell className="font-medium">{indexOfFirstItem + index + 1}</TableCell>
-                            <TableCell>
-                              <div className="flex items-center gap-2">
-                                <div className="w-8 h-8 rounded bg-gray-200 flex items-center justify-center overflow-hidden">
-                                  {motor.image ? <img src={motor.image} alt={motor.name} className="w-full h-full object-cover" /> : <Bike className="h-4 w-4 text-gray-600" />}
-                                </div>
-                                <div>
-                                  <p className="font-medium">{motor.name}</p>
-                                  <p className="text-xs text-gray-600">{motor.cc}</p>
-                                </div>
-                              </div>
-                            </TableCell>
-                            <TableCell>{motor.brand}</TableCell>
-                            <TableCell>{motor.plateNumber}</TableCell>
-                            <TableCell>{motor.year}</TableCell>
-                            <TableCell className="font-semibold">Rp {formatPrice(motor.pricePerDay)}</TableCell>
-                            <TableCell>
-                              <Badge
-                                style={{
-                                  backgroundColor: motor.status === "Available" ? "#1ABC9C" : motor.status === "Rented" ? "#F59E0B" : "#EF4444",
-                                }}
-                              >
-                                {motor.status}
-                              </Badge>
-                            </TableCell>
-                            <TableCell>
-                              <div className="flex gap-2">
-                                <Button variant="ghost" size="sm" onClick={() => handleViewMotor(motor.id)}>
-                                  <Eye className="h-4 w-4" />
-                                </Button>
-                                <Button variant="ghost" size="sm">
-                                  <Edit className="h-4 w-4" />
-                                </Button>
-                                <Button
-                                  variant="ghost"
-                                  size="sm"
-                                  onClick={() => {
-                                    setMotorToDelete(motor);
-                                    setIsDeleteDialogOpen(true);
-                                  }}
-                                >
-                                  <Trash2 className="h-4 w-4 text-red-600" />
-                                </Button>
-                              </div>
-                            </TableCell>
-                          </TableRow>
-                        ))
-                      )}
-                    </TableBody>
-                  </Table>
+                <CardContent className="p-0">
+                  <div className="overflow-x-auto">
+                    <div className="inline-block min-w-full align-middle">
+                      <div className="overflow-hidden">
+                        <Table>
+                          <TableHeader>
+                            <TableRow>
+                              <TableHead>No</TableHead>
+                              <TableHead>Name</TableHead>
+                              <TableHead>Brand</TableHead>
+                              <TableHead>Plate Number</TableHead>
+                              <TableHead>Year</TableHead>
+                              <TableHead>Daily Rate</TableHead>
+                              <TableHead>Status</TableHead>
+                              <TableHead>Actions</TableHead>
+                            </TableRow>
+                          </TableHeader>
+                          <TableBody>
+                            {loading ? (
+                              <TableRow>
+                                <TableCell colSpan={8} className="text-center py-8">
+                                  <Loader2 className="h-8 w-8 animate-spin mx-auto" />
+                                </TableCell>
+                              </TableRow>
+                            ) : motors.length === 0 ? (
+                              <TableRow>
+                                <TableCell colSpan={8} className="text-center py-8 text-gray-500">
+                                  No motors found
+                                </TableCell>
+                              </TableRow>
+                            ) : (
+                              currentMotors.map((motor, index) => (
+                                <TableRow key={motor.id}>
+                                  <TableCell className="font-medium">{indexOfFirstItem + index + 1}</TableCell>
+                                  <TableCell>
+                                    <div className="flex items-center gap-2">
+                                      <div className="w-8 h-8 rounded bg-gray-200 flex items-center justify-center overflow-hidden">
+                                        {motor.image ? <img src={motor.image} alt={motor.name} className="w-full h-full object-cover" /> : <Bike className="h-4 w-4 text-gray-600" />}
+                                      </div>
+                                      <div>
+                                        <p className="font-medium">{motor.name}</p>
+                                        <p className="text-xs text-gray-600">{motor.cc}</p>
+                                      </div>
+                                    </div>
+                                  </TableCell>
+                                  <TableCell>{motor.brand}</TableCell>
+                                  <TableCell>{motor.plateNumber}</TableCell>
+                                  <TableCell>{motor.year}</TableCell>
+                                  <TableCell className="font-semibold">Rp {formatPrice(motor.pricePerDay)}</TableCell>
+                                  <TableCell>
+                                    <Badge
+                                      style={{
+                                        backgroundColor: motor.status === "Available" ? "#1ABC9C" : motor.status === "Rented" ? "#F59E0B" : "#EF4444",
+                                      }}
+                                    >
+                                      {motor.status}
+                                    </Badge>
+                                  </TableCell>
+                                  <TableCell>
+                                    <div className="flex gap-2">
+                                      <Button variant="ghost" size="sm" onClick={() => handleViewMotor(motor.id)}>
+                                        <Eye className="h-4 w-4" />
+                                      </Button>
+                                      <Button variant="ghost" size="sm">
+                                        <Edit className="h-4 w-4" />
+                                      </Button>
+                                      <Button
+                                        variant="ghost"
+                                        size="sm"
+                                        onClick={() => {
+                                          setMotorToDelete(motor);
+                                          setIsDeleteDialogOpen(true);
+                                        }}
+                                      >
+                                        <Trash2 className="h-4 w-4 text-red-600" />
+                                      </Button>
+                                    </div>
+                                  </TableCell>
+                                </TableRow>
+                              ))
+                            )}
+                          </TableBody>
+                        </Table>
+                      </div>
+                    </div>
+                  </div>
 
                   {/* Pagination */}
                   {!loading && motors.length > 0 && (
-                    <div className="flex items-center justify-between mt-4 pt-4 border-t">
-                      <div className="flex items-center gap-4">
-                        <div className="text-sm text-gray-600">
+                    <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 sm:gap-4 p-3 sm:p-4 border-t">
+                      <div className="flex flex-col sm:flex-row items-start sm:items-center gap-2 sm:gap-3 w-full sm:w-auto">
+                        <div className="text-xs sm:text-sm text-gray-600 whitespace-nowrap">
                           Showing {indexOfFirstItem + 1} to {Math.min(indexOfLastItem, motors.length)} of {motors.length} motors
                         </div>
                         <div className="flex items-center gap-2">
-                          <span className="text-sm text-gray-600">Show:</span>
-                          <select value={itemsPerPage} onChange={(e) => setItemsPerPage(Number(e.target.value))} className="border rounded-md px-2 py-1 text-sm">
+                          <span className="text-xs sm:text-sm text-gray-600">Show:</span>
+                          <select value={itemsPerPage} onChange={(e) => setItemsPerPage(Number(e.target.value))} className="border rounded-md px-2 py-1 text-xs sm:text-sm">
                             <option value={10}>10</option>
                             <option value={25}>25</option>
                             <option value={50}>50</option>
@@ -519,16 +525,28 @@ export default function InventoryPage() {
                           </select>
                         </div>
                       </div>
-                      <div className="flex gap-2">
-                        <Button variant="outline" size="sm" onClick={() => handlePageChange(currentPage - 1)} disabled={currentPage === 1}>
+                      <div className="flex flex-wrap gap-1.5 sm:gap-2 w-full sm:w-auto justify-center sm:justify-end">
+                        <Button variant="outline" size="sm" onClick={() => handlePageChange(currentPage - 1)} disabled={currentPage === 1} className="min-w-20 h-8 sm:h-9 text-xs sm:text-sm">
                           Previous
                         </Button>
-                        {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => (
-                          <Button key={page} variant={currentPage === page ? "default" : "outline"} size="sm" onClick={() => handlePageChange(page)} style={currentPage === page ? { backgroundColor: "#1ABC9C" } : {}}>
-                            {page}
-                          </Button>
-                        ))}
-                        <Button variant="outline" size="sm" onClick={() => handlePageChange(currentPage + 1)} disabled={currentPage === totalPages}>
+                        <div className="hidden md:flex gap-1.5">
+                          {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => (
+                            <Button
+                              key={page}
+                              variant={currentPage === page ? "default" : "outline"}
+                              size="sm"
+                              onClick={() => handlePageChange(page)}
+                              style={currentPage === page ? { backgroundColor: "#1ABC9C" } : {}}
+                              className="h-8 sm:h-9 w-8 sm:w-9 p-0 text-xs sm:text-sm"
+                            >
+                              {page}
+                            </Button>
+                          ))}
+                        </div>
+                        <div className="md:hidden text-xs sm:text-sm text-gray-600 flex items-center px-2">
+                          Page {currentPage} of {totalPages}
+                        </div>
+                        <Button variant="outline" size="sm" onClick={() => handlePageChange(currentPage + 1)} disabled={currentPage === totalPages} className="min-w-20 h-8 sm:h-9 text-xs sm:text-sm">
                           Next
                         </Button>
                       </div>

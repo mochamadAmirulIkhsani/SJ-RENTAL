@@ -1,6 +1,6 @@
 "use client";
 
-import { Bell, Search, User, LogOut } from "lucide-react";
+import { Bell, Search, User, LogOut, Menu } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
@@ -12,39 +12,43 @@ export function AdminHeader({ title }: { title: string }) {
 
   return (
     <header className="border-b bg-white sticky top-0 z-40">
-      <div className="flex h-16 items-center px-8 gap-4">
-        <h1 className="text-2xl font-bold" style={{ color: "#0A2540" }}>
+      <div className="flex h-14 sm:h-16 items-center px-3 sm:px-4 lg:px-6 xl:px-8 gap-2 sm:gap-3 lg:gap-4">
+        {/* Mobile spacing for hamburger menu */}
+        <div className="w-11 lg:hidden"></div>
+
+        <h1 className="text-base sm:text-lg lg:text-xl xl:text-2xl font-bold truncate" style={{ color: "#0A2540" }}>
           {title}
         </h1>
 
-        <div className="flex-1 flex items-center justify-end space-x-4">
-          <div className="relative w-64">
+        <div className="flex-1 flex items-center justify-end space-x-1 sm:space-x-2 lg:space-x-3 xl:space-x-4">
+          {/* Hide search on mobile */}
+          <div className="hidden md:block relative w-40 lg:w-48 xl:w-64">
             <Search className="absolute left-2 top-2.5 h-4 w-4 text-gray-400" />
-            <Input placeholder="Search..." className="pl-8" />
+            <Input placeholder="Search..." className="pl-8 text-sm" />
           </div>
 
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
-              <Button variant="ghost" size="sm" className="relative">
-                <Bell className="h-5 w-5" />
-                <Badge className="absolute -top-1 -right-1 h-5 w-5 flex items-center justify-center p-0" style={{ backgroundColor: "#1ABC9C" }}>
+              <Button variant="ghost" size="sm" className="relative h-9 w-9 sm:h-10 sm:w-10">
+                <Bell className="h-4 w-4 sm:h-5 sm:w-5" />
+                <Badge className="absolute -top-1 -right-1 h-4 w-4 sm:h-5 sm:w-5 flex items-center justify-center p-0 text-xs" style={{ backgroundColor: "#1ABC9C" }}>
                   3
                 </Badge>
               </Button>
             </DropdownMenuTrigger>
-            <DropdownMenuContent align="end" className="w-80">
+            <DropdownMenuContent align="end" className="w-64 sm:w-72 lg:w-80">
               <DropdownMenuLabel>Notifications</DropdownMenuLabel>
               <DropdownMenuSeparator />
-              <DropdownMenuItem>New booking request received</DropdownMenuItem>
-              <DropdownMenuItem>Motor return scheduled for today</DropdownMenuItem>
-              <DropdownMenuItem>Low inventory alert: Honda Beat</DropdownMenuItem>
+              <DropdownMenuItem className="text-sm">New booking request received</DropdownMenuItem>
+              <DropdownMenuItem className="text-sm">Motor return scheduled for today</DropdownMenuItem>
+              <DropdownMenuItem className="text-sm">Low inventory alert: Honda Beat</DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>
 
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
-              <Button variant="ghost" size="sm">
-                <User className="h-5 w-5" />
+              <Button variant="ghost" size="sm" className="h-9 w-9 sm:h-10 sm:w-10">
+                <User className="h-4 w-4 sm:h-5 sm:w-5" />
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end">

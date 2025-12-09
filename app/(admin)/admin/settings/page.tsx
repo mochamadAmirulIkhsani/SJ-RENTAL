@@ -17,10 +17,10 @@ export default function SettingsPage() {
     <div className="flex min-h-screen bg-gray-50">
       <AdminSidebar />
 
-      <div className="flex-1 ml-64">
+      <div className="flex-1 w-full lg:ml-64">
         <AdminHeader title="System Settings" />
 
-        <div className="p-8">
+        <div className="p-3 sm:p-4 lg:p-6 xl:p-8">
           <Tabs defaultValue="company" className="space-y-6">
             <TabsList>
               <TabsTrigger value="company">Company Info</TabsTrigger>
