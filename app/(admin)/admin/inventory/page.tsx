@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react";
 import { AdminSidebar } from "@/components/admin-sidebar";
 import { AdminHeader } from "@/components/admin-header";
+import { MotorImageUpload } from "@/components/motor-image-upload";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -47,6 +48,8 @@ export default function InventoryPage() {
   const [brandFilter, setBrandFilter] = useState("all");
   const [statusFilter, setStatusFilter] = useState("all");
   const [yearFilter, setYearFilter] = useState("all");
+  const [currentPage, setCurrentPage] = useState(1);
+  const [itemsPerPage, setItemsPerPage] = useState(10);
   const [selectedMotor, setSelectedMotor] = useState<Motor | null>(null);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
@@ -174,9 +177,24 @@ export default function InventoryPage() {
   useEffect(() => {
     const timer = setTimeout(() => {
       fetchMotors();
+      setCurrentPage(1);
     }, 500);
     return () => clearTimeout(timer);
   }, [searchTerm]);
+
+  useEffect(() => {
+    setCurrentPage(1); // Reset to first page when items per page changes
+  }, [itemsPerPage]);
+
+  // Pagination logic
+  const indexOfLastItem = currentPage * itemsPerPage;
+  const indexOfFirstItem = indexOfLastItem - itemsPerPage;
+  const currentMotors = motors.slice(indexOfFirstItem, indexOfLastItem);
+  const totalPages = Math.ceil(motors.length / itemsPerPage);
+
+  const handlePageChange = (page: number) => {
+    setCurrentPage(page);
+  };
 
   const formatPrice = (price: number) => {
     return new Intl.NumberFormat("id-ID").format(price);
@@ -324,8 +342,18 @@ export default function InventoryPage() {
                                 </Badge>
                               </div>
                             </div>
-                            <div className="h-48 bg-gray-200 rounded-lg flex items-center justify-center">
-                              <Bike className="h-20 w-20 text-gray-400" />
+                            <div className="h-48 bg-gray-200 rounded-lg flex items-center justify-center overflow-hidden">
+                              {selectedMotor.image ? <img src={selectedMotor.image} alt={selectedMotor.name} className="w-full h-full object-cover" /> : <Bike className="h-20 w-20 text-gray-400" />}
+                            </div>
+                            <div className="border-t pt-4">
+                              <MotorImageUpload
+                                motorId={selectedMotor.id}
+                                currentImageUrl={selectedMotor.image}
+                                onUploadSuccess={(imageUrl) => {
+                                  setSelectedMotor({ ...selectedMotor, image: imageUrl });
+                                  fetchMotors();
+                                }}
+                              />
                             </div>
                             <div className="grid grid-cols-2 gap-4">
                               <div>
@@ -397,7 +425,7 @@ export default function InventoryPage() {
                   <Table>
                     <TableHeader>
                       <TableRow>
-                        <TableHead>Motor ID</TableHead>
+                        <TableHead>No</TableHead>
                         <TableHead>Name</TableHead>
                         <TableHead>Brand</TableHead>
                         <TableHead>Plate Number</TableHead>
@@ -421,13 +449,13 @@ export default function InventoryPage() {
                           </TableCell>
                         </TableRow>
                       ) : (
-                        motors.map((motor) => (
+                        currentMotors.map((motor, index) => (
                           <TableRow key={motor.id}>
-                            <TableCell className="font-medium">{motor.id}</TableCell>
+                            <TableCell className="font-medium">{indexOfFirstItem + index + 1}</TableCell>
                             <TableCell>
                               <div className="flex items-center gap-2">
-                                <div className="w-8 h-8 rounded bg-gray-200 flex items-center justify-center">
-                                  <Bike className="h-4 w-4 text-gray-600" />
+                                <div className="w-8 h-8 rounded bg-gray-200 flex items-center justify-center overflow-hidden">
+                                  {motor.image ? <img src={motor.image} alt={motor.name} className="w-full h-full object-cover" /> : <Bike className="h-4 w-4 text-gray-600" />}
                                 </div>
                                 <div>
                                   <p className="font-medium">{motor.name}</p>
@@ -473,6 +501,39 @@ export default function InventoryPage() {
                       )}
                     </TableBody>
                   </Table>
+
+                  {/* Pagination */}
+                  {!loading && motors.length > 0 && (
+                    <div className="flex items-center justify-between mt-4 pt-4 border-t">
+                      <div className="flex items-center gap-4">
+                        <div className="text-sm text-gray-600">
+                          Showing {indexOfFirstItem + 1} to {Math.min(indexOfLastItem, motors.length)} of {motors.length} motors
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <span className="text-sm text-gray-600">Show:</span>
+                          <select value={itemsPerPage} onChange={(e) => setItemsPerPage(Number(e.target.value))} className="border rounded-md px-2 py-1 text-sm">
+                            <option value={10}>10</option>
+                            <option value={25}>25</option>
+                            <option value={50}>50</option>
+                            <option value={100}>100</option>
+                          </select>
+                        </div>
+                      </div>
+                      <div className="flex gap-2">
+                        <Button variant="outline" size="sm" onClick={() => handlePageChange(currentPage - 1)} disabled={currentPage === 1}>
+                          Previous
+                        </Button>
+                        {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => (
+                          <Button key={page} variant={currentPage === page ? "default" : "outline"} size="sm" onClick={() => handlePageChange(page)} style={currentPage === page ? { backgroundColor: "#1ABC9C" } : {}}>
+                            {page}
+                          </Button>
+                        ))}
+                        <Button variant="outline" size="sm" onClick={() => handlePageChange(currentPage + 1)} disabled={currentPage === totalPages}>
+                          Next
+                        </Button>
+                      </div>
+                    </div>
+                  )}
                 </CardContent>
               </Card>
             </TabsContent>

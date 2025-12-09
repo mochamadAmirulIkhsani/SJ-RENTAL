@@ -1,26 +1,81 @@
 "use client";
 
+import { useState, useEffect } from "react";
 import { CustomerNavbar } from "@/components/customer-navbar";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Bike, Filter, Search } from "lucide-react";
+import { Bike, Filter, Search, Loader2 } from "lucide-react";
 import Link from "next/link";
 
-const motors = [
-  { id: 1, name: "Honda Beat", type: "Automatic", price: "50,000", cc: "110cc", year: "2023", status: "Available" },
-  { id: 2, name: "Yamaha Mio", type: "Automatic", price: "55,000", cc: "125cc", year: "2023", status: "Available" },
-  { id: 3, name: "Honda Vario 160", type: "Automatic", price: "65,000", cc: "160cc", year: "2024", status: "Available" },
-  { id: 4, name: "Yamaha Aerox", type: "Automatic", price: "70,000", cc: "155cc", year: "2024", status: "Available" },
-  { id: 5, name: "Honda Scoopy", type: "Automatic", price: "48,000", cc: "110cc", year: "2023", status: "Rented" },
-  { id: 6, name: "Yamaha NMAX", type: "Automatic", price: "75,000", cc: "155cc", year: "2024", status: "Available" },
-  { id: 7, name: "Honda PCX", type: "Automatic", price: "80,000", cc: "160cc", year: "2024", status: "Available" },
-  { id: 8, name: "Yamaha Freego", type: "Automatic", price: "52,000", cc: "125cc", year: "2023", status: "Rented" },
-];
+interface Motor {
+  id: number;
+  name: string;
+  plateNumber: string;
+  type: string;
+  cc: string;
+  brand: string;
+  model: string;
+  year: number;
+  color: string | null;
+  status: string;
+  location: string;
+  pricePerDay: number;
+  image: string | null;
+  description: string | null;
+}
 
 export default function MotorsPage() {
+  const [motors, setMotors] = useState<Motor[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [searchTerm, setSearchTerm] = useState("");
+  const [typeFilter, setTypeFilter] = useState("all");
+  const [statusFilter, setStatusFilter] = useState("all");
+  const [priceFilter, setPriceFilter] = useState("all");
+
+  const fetchMotors = async () => {
+    try {
+      setLoading(true);
+      const params = new URLSearchParams();
+      if (statusFilter !== "all") params.append("status", statusFilter);
+      if (typeFilter !== "all") params.append("type", typeFilter);
+      if (searchTerm) params.append("search", searchTerm);
+
+      const response = await fetch(`/api/motors?${params.toString()}`);
+      const data = await response.json();
+
+      if (response.ok) {
+        let filteredMotors = data.motors;
+
+        // Filter by price range
+        if (priceFilter !== "all") {
+          filteredMotors = filteredMotors.filter((motor: Motor) => {
+            const price = Number(motor.pricePerDay);
+            if (priceFilter === "low") return price < 50000;
+            if (priceFilter === "mid") return price >= 50000 && price <= 70000;
+            if (priceFilter === "high") return price > 70000;
+            return true;
+          });
+        }
+
+        setMotors(filteredMotors);
+      }
+    } catch (error) {
+      console.error("Failed to fetch motors:", error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchMotors();
+  }, [searchTerm, typeFilter, statusFilter, priceFilter]);
+
+  const formatPrice = (price: number) => {
+    return new Intl.NumberFormat("id-ID").format(price);
+  };
   return (
     <div className="min-h-screen bg-gray-50">
       <CustomerNavbar />
@@ -45,9 +100,9 @@ export default function MotorsPage() {
             <div className="grid md:grid-cols-4 gap-4">
               <div className="relative">
                 <Search className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
-                <Input placeholder="Search by name..." className="pl-10" />
+                <Input placeholder="Search by name..." className="pl-10" value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} />
               </div>
-              <Select>
+              <Select value={typeFilter} onValueChange={setTypeFilter}>
                 <SelectTrigger>
                   <SelectValue placeholder="Type" />
                 </SelectTrigger>
@@ -57,7 +112,7 @@ export default function MotorsPage() {
                   <SelectItem value="manual">Manual</SelectItem>
                 </SelectContent>
               </Select>
-              <Select>
+              <Select value={statusFilter} onValueChange={setStatusFilter}>
                 <SelectTrigger>
                   <SelectValue placeholder="Status" />
                 </SelectTrigger>
@@ -67,7 +122,7 @@ export default function MotorsPage() {
                   <SelectItem value="rented">Rented</SelectItem>
                 </SelectContent>
               </Select>
-              <Select>
+              <Select value={priceFilter} onValueChange={setPriceFilter}>
                 <SelectTrigger>
                   <SelectValue placeholder="Price Range" />
                 </SelectTrigger>
@@ -84,35 +139,46 @@ export default function MotorsPage() {
 
         {/* Motors Grid */}
         <div className="grid md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-          {motors.map((motor) => (
-            <Card key={motor.id} className="overflow-hidden hover:shadow-lg transition-shadow">
-              <div className="h-48 bg-gray-200 flex items-center justify-center relative">
-                <Bike className="h-20 w-20 text-gray-400" />
-                <Badge className="absolute top-4 right-4" style={{ backgroundColor: motor.status === "Available" ? "#1ABC9C" : "#6B7280" }}>
-                  {motor.status}
-                </Badge>
-              </div>
-              <CardHeader>
-                <CardTitle className="text-lg">{motor.name}</CardTitle>
-                <CardDescription>
-                  {motor.type} • {motor.cc} • {motor.year}
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                <div className="flex items-center justify-between mb-4">
-                  <div>
-                    <p className="text-2xl font-bold" style={{ color: "#0A2540" }}>
-                      Rp {motor.price}
-                    </p>
-                    <p className="text-sm text-gray-600">per day</p>
-                  </div>
+          {loading ? (
+            <div className="col-span-full flex items-center justify-center py-12">
+              <Loader2 className="h-12 w-12 animate-spin text-gray-400" />
+            </div>
+          ) : motors.length === 0 ? (
+            <div className="col-span-full text-center py-12 text-gray-500">
+              <Bike className="h-16 w-16 mx-auto mb-4 text-gray-300" />
+              <p className="text-lg">No motors found</p>
+            </div>
+          ) : (
+            motors.map((motor) => (
+              <Card key={motor.id} className="overflow-hidden hover:shadow-lg transition-shadow">
+                <div className="h-48 bg-gray-200 flex items-center justify-center relative overflow-hidden">
+                  {motor.image ? <img src={motor.image} alt={motor.name} className="w-full h-full object-cover" /> : <Bike className="h-20 w-20 text-gray-400" />}
+                  <Badge className="absolute top-4 right-4" style={{ backgroundColor: motor.status === "Available" ? "#1ABC9C" : "#6B7280" }}>
+                    {motor.status}
+                  </Badge>
                 </div>
-                <Button className="w-full" style={{ backgroundColor: motor.status === "Available" ? "#1ABC9C" : "#6B7280" }} disabled={motor.status !== "Available"}>
-                  {motor.status === "Available" ? <Link href="/booking">Book Now</Link> : "Not Available"}
-                </Button>
-              </CardContent>
-            </Card>
-          ))}
+                <CardHeader>
+                  <CardTitle className="text-lg">{motor.name}</CardTitle>
+                  <CardDescription>
+                    {motor.type} • {motor.cc} • {motor.year}
+                  </CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <div className="flex items-center justify-between mb-4">
+                    <div>
+                      <p className="text-2xl font-bold" style={{ color: "#0A2540" }}>
+                        Rp {formatPrice(motor.pricePerDay)}
+                      </p>
+                      <p className="text-sm text-gray-600">per day</p>
+                    </div>
+                  </div>
+                  <Button className="w-full" style={{ backgroundColor: motor.status === "Available" ? "#1ABC9C" : "#6B7280" }} disabled={motor.status !== "Available"}>
+                    {motor.status === "Available" ? <Link href="/booking">Book Now</Link> : "Not Available"}
+                  </Button>
+                </CardContent>
+              </Card>
+            ))
+          )}
         </div>
       </div>
     </div>

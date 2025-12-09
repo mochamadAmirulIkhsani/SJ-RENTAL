@@ -1,6 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { prisma } from "@/lib/prisma";
-import { verifyPassword, generateToken } from "@/lib/auth";
+import { createClient } from "@/lib/supabase-server";
 
 export async function POST(request: NextRequest) {
   try {
@@ -12,37 +11,26 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "Email dan password harus diisi" }, { status: 400 });
     }
 
-    // Cari user berdasarkan email
-    const user = await prisma.user.findUnique({
-      where: { email },
+    const supabase = await createClient();
+
+    // Login dengan Supabase Auth
+    const { data, error } = await supabase.auth.signInWithPassword({
+      email,
+      password,
     });
 
-    if (!user) {
+    if (error) {
       return NextResponse.json({ error: "Email atau password salah" }, { status: 401 });
     }
 
-    // Verify password
-    const isValidPassword = await verifyPassword(password, user.password);
-
-    if (!isValidPassword) {
-      return NextResponse.json({ error: "Email atau password salah" }, { status: 401 });
-    }
-
-    // Generate JWT token
-    const token = generateToken({
-      userId: user.id,
-      email: user.email,
-      role: user.role,
-    });
-
-    // Return user data (tanpa password) dan token
-    const { password: _, ...userWithoutPassword } = user;
+    // Get user metadata from database
+    const { data: userData, error: userError } = await supabase.from("User").select("id, email, name, role").eq("email", email).single();
 
     return NextResponse.json(
       {
         message: "Login berhasil",
-        user: userWithoutPassword,
-        token,
+        user: userData || { email: data.user?.email, role: "CUSTOMER" },
+        session: data.session,
       },
       { status: 200 }
     );

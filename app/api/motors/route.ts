@@ -1,5 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
-import { prisma } from "@/lib/prisma";
+import { createClient } from "@supabase/supabase-js";
+
+const supabase = createClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.SUPABASE_SERVICE_ROLE_KEY!);
 
 export async function GET(request: NextRequest) {
   try {
@@ -9,49 +11,51 @@ export async function GET(request: NextRequest) {
     const type = searchParams.get("type");
     const search = searchParams.get("search");
 
-    // Build filter query
-    const where: any = {};
+    // Build query
+    let query = supabase.from("Motor").select("*");
 
+    // Apply filters
     if (status && status !== "all") {
-      where.status = status.charAt(0).toUpperCase() + status.slice(1);
+      const statusCapitalized = status.charAt(0).toUpperCase() + status.slice(1);
+      query = query.eq("status", statusCapitalized);
     }
 
     if (location && location !== "all") {
-      where.location = { contains: location, mode: "insensitive" };
+      query = query.ilike("location", `%${location}%`);
     }
 
     if (type && type !== "all") {
-      where.type = type.charAt(0).toUpperCase() + type.slice(1);
+      const typeCapitalized = type.charAt(0).toUpperCase() + type.slice(1);
+      query = query.eq("type", typeCapitalized);
     }
 
     if (search) {
-      where.OR = [{ name: { contains: search, mode: "insensitive" } }, { plateNumber: { contains: search, mode: "insensitive" } }, { brand: { contains: search, mode: "insensitive" } }];
+      query = query.or(`name.ilike.%${search}%,plateNumber.ilike.%${search}%,brand.ilike.%${search}%`);
     }
 
     // Get motors with filters
-    const motors = await prisma.motor.findMany({
-      where,
-      orderBy: { createdAt: "desc" },
-      include: {
-        _count: {
-          select: { bookings: true },
-        },
-      },
-    });
+    const { data: motors, error: motorsError } = await query.order("createdAt", { ascending: false });
+
+    if (motorsError) {
+      console.error("Motors query error:", motorsError);
+      return NextResponse.json({ error: "Failed to fetch motors" }, { status: 500 });
+    }
 
     // Get statistics
-    const stats = await prisma.motor.groupBy({
-      by: ["status"],
-      _count: true,
-    });
+    const { data: allMotors, error: statsError } = await supabase.from("Motor").select("status");
 
-    const totalFleet = await prisma.motor.count();
-    const available = stats.find((s) => s.status === "Available")?._count || 0;
-    const rented = stats.find((s) => s.status === "Rented")?._count || 0;
-    const maintenance = stats.find((s) => s.status === "Maintenance")?._count || 0;
+    if (statsError) {
+      console.error("Stats query error:", statsError);
+      return NextResponse.json({ error: "Failed to fetch stats" }, { status: 500 });
+    }
+
+    const totalFleet = allMotors?.length || 0;
+    const available = allMotors?.filter((m) => m.status === "Available").length || 0;
+    const rented = allMotors?.filter((m) => m.status === "Rented").length || 0;
+    const maintenance = allMotors?.filter((m) => m.status === "Maintenance").length || 0;
 
     return NextResponse.json({
-      motors,
+      motors: motors || [],
       stats: {
         totalFleet,
         available,
@@ -76,17 +80,16 @@ export async function POST(request: NextRequest) {
     }
 
     // Cek apakah plate number sudah ada
-    const existing = await prisma.motor.findUnique({
-      where: { plateNumber },
-    });
+    const { data: existing } = await supabase.from("Motor").select("id").eq("plateNumber", plateNumber).single();
 
     if (existing) {
       return NextResponse.json({ error: "Plate number already exists" }, { status: 400 });
     }
 
     // Buat motor baru
-    const motor = await prisma.motor.create({
-      data: {
+    const { data: motor, error } = await supabase
+      .from("Motor")
+      .insert({
         name,
         plateNumber,
         type,
@@ -100,8 +103,14 @@ export async function POST(request: NextRequest) {
         description,
         image,
         status: "Available",
-      },
-    });
+      })
+      .select()
+      .single();
+
+    if (error) {
+      console.error("Create motor error:", error);
+      return NextResponse.json({ error: "Failed to create motor" }, { status: 500 });
+    }
 
     return NextResponse.json({ message: "Motor created successfully", motor }, { status: 201 });
   } catch (error) {
