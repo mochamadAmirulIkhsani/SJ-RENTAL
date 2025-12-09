@@ -58,22 +58,29 @@ model Motor {
 }
 
 model Booking {
-  id          Int      @id @default(autoincrement())
-  bookingCode String   @unique
-  userId      Int
-  motorId     Int
-  startDate   DateTime
-  endDate     DateTime
-  totalDays   Int
-  totalPrice  Decimal  @db.Decimal(10, 2)
-  status      String   @default("Pending") // Pending, Active, Completed, Cancelled
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
-  user        User     @relation(fields: [userId], references: [id])
-  motor       Motor    @relation(fields: [motorId], references: [id])
+  id             Int      @id @default(autoincrement())
+  bookingCode    String   @unique
+  userId         Int
+  motorId        Int
+  startDate      DateTime
+  endDate        DateTime
+  totalDays      Int
+  totalPrice     Decimal  @db.Decimal(10, 2)
+  status         String   @default("Pending") // Pending, Paid, Active, Completed, Cancelled
+  paymentStatus  String   @default("Unpaid") // Unpaid, Paid, Refunded
+  paymentMethod  String?  // Midtrans payment method
+  transactionId  String?  // Midtrans transaction ID
+  paymentUrl     String?  // Midtrans payment redirect URL
+  paidAt         DateTime?
+  notes          String?
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+  user           User     @relation(fields: [userId], references: [id])
+  motor          Motor    @relation(fields: [motorId], references: [id])
 
   @@index([userId])
   @@index([motorId])
   @@index([status])
   @@index([bookingCode])
+  @@index([transactionId])
 }

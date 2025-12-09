@@ -89,10 +89,10 @@ export default function MotorAvailabilityPage() {
     <div className="flex min-h-screen bg-gray-50">
       <AdminSidebar />
 
-      <div className="flex-1 ml-64">
-        <AdminHeader title="Motor Availability Monitoring" />
+      <div className="flex-1 w-full lg:ml-64">
+        <AdminHeader title="Motor Availability" />
 
-        <div className="p-8">
+        <div className="p-3 sm:p-4 lg:p-6 xl:p-8">
           {/* Summary Cards */}
           <div className="grid md:grid-cols-4 gap-6 mb-8">
             <Card>

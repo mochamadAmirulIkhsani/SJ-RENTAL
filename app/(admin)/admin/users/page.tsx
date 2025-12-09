@@ -43,10 +43,10 @@ export default function UsersRolesPage() {
     <div className="flex min-h-screen bg-gray-50">
       <AdminSidebar />
 
-      <div className="flex-1 ml-64">
+      <div className="flex-1 w-full lg:ml-64">
         <AdminHeader title="User & Role Management" />
 
-        <div className="p-8">
+        <div className="p-3 sm:p-4 lg:p-6 xl:p-8">
           <Tabs defaultValue="users" className="space-y-6">
             <TabsList>
               <TabsTrigger value="users">Users</TabsTrigger>
