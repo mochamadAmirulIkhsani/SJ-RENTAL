@@ -101,7 +101,7 @@ export default function MotorAvailabilityPage() {
               </CardHeader>
               <CardContent>
                 <div className="text-3xl font-bold" style={{ color: "#0A2540" }}>
-                  {loading ? <Loader2 className="h-8 w-8 animate-spin" /> : stats.totalFleet}
+                  {loading ? <Loader2 className="h-8 w-8 animate-spin" /> : stats?.totalFleet || 0}
                 </div>
               </CardContent>
             </Card>
@@ -111,7 +111,7 @@ export default function MotorAvailabilityPage() {
               </CardHeader>
               <CardContent>
                 <div className="text-3xl font-bold" style={{ color: "#1ABC9C" }}>
-                  {loading ? <Loader2 className="h-8 w-8 animate-spin" /> : stats.available}
+                  {loading ? <Loader2 className="h-8 w-8 animate-spin" /> : stats?.available || 0}
                 </div>
               </CardContent>
             </Card>
@@ -120,7 +120,7 @@ export default function MotorAvailabilityPage() {
                 <CardTitle className="text-sm font-medium text-gray-600">Rented</CardTitle>
               </CardHeader>
               <CardContent>
-                <div className="text-3xl font-bold text-orange-500">{loading ? <Loader2 className="h-8 w-8 animate-spin" /> : stats.rented}</div>
+                <div className="text-3xl font-bold text-orange-500">{loading ? <Loader2 className="h-8 w-8 animate-spin" /> : stats?.rented || 0}</div>
               </CardContent>
             </Card>
             <Card>
@@ -128,7 +128,7 @@ export default function MotorAvailabilityPage() {
                 <CardTitle className="text-sm font-medium text-gray-600">Maintenance</CardTitle>
               </CardHeader>
               <CardContent>
-                <div className="text-3xl font-bold text-red-500">{loading ? <Loader2 className="h-8 w-8 animate-spin" /> : stats.maintenance}</div>
+                <div className="text-3xl font-bold text-red-500">{loading ? <Loader2 className="h-8 w-8 animate-spin" /> : stats?.maintenance || 0}</div>
               </CardContent>
             </Card>
           </div>
@@ -224,7 +224,7 @@ export default function MotorAvailabilityPage() {
                         <p className="mt-2 text-gray-500">Loading motors...</p>
                       </TableCell>
                     </TableRow>
-                  ) : motors.length === 0 ? (
+                  ) : !motors || motors.length === 0 ? (
                     <TableRow>
                       <TableCell colSpan={7} className="text-center py-8 text-gray-500">
                         No motors found

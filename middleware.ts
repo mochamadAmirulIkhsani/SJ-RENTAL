@@ -1,6 +1,6 @@
+import { createServerClient, type CookieOptions } from "@supabase/ssr";
 import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
-import { verifyTokenEdge } from "./lib/auth-edge";
 
 // Path yang tidak memerlukan authentication
 const publicPaths = ["/login", "/register", "/", "/home", "/motors", "/booking"];
@@ -21,36 +21,79 @@ export async function middleware(request: NextRequest) {
     return NextResponse.next();
   }
 
-  // Get token dari cookie atau header
-  const token = request.cookies.get("token")?.value || request.headers.get("authorization")?.replace("Bearer ", "");
+  let response = NextResponse.next({
+    request: {
+      headers: request.headers,
+    },
+  });
 
-  console.log(`[Middleware] Path: ${pathname}, Token exists: ${!!token}`);
+  const supabase = createServerClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!, {
+    cookies: {
+      get(name: string) {
+        return request.cookies.get(name)?.value;
+      },
+      set(name: string, value: string, options: CookieOptions) {
+        request.cookies.set({
+          name,
+          value,
+          ...options,
+        });
+        response = NextResponse.next({
+          request: {
+            headers: request.headers,
+          },
+        });
+        response.cookies.set({
+          name,
+          value,
+          ...options,
+        });
+      },
+      remove(name: string, options: CookieOptions) {
+        request.cookies.set({
+          name,
+          value: "",
+          ...options,
+        });
+        response = NextResponse.next({
+          request: {
+            headers: request.headers,
+          },
+        });
+        response.cookies.set({
+          name,
+          value: "",
+          ...options,
+        });
+      },
+    },
+  });
 
-  if (!token) {
-    console.log(`[Middleware] No token for protected path ${pathname}, redirecting to /home`);
-    // Redirect ke home (customer landing) jika tidak ada token untuk protected paths
-    return NextResponse.redirect(new URL("/home", request.url));
-  }
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
 
-  // Verify token (async untuk Edge Runtime)
-  const payload = await verifyTokenEdge(token);
+  console.log(`[Middleware] Path: ${pathname}, User exists: ${!!user}`);
 
-  if (!payload) {
-    console.log(`[Middleware] Invalid token, redirecting to /login`);
-    // Token invalid, redirect ke login
+  if (!user) {
+    console.log(`[Middleware] No user for protected path ${pathname}, redirecting to /login`);
     return NextResponse.redirect(new URL("/login", request.url));
   }
 
-  console.log(`[Middleware] Valid token for user: ${payload.email}, role: ${payload.role}`);
-
   // Check admin access
-  if (pathname.startsWith("/admin") && payload.role !== "ADMIN") {
-    console.log(`[Middleware] Non-admin trying to access admin, redirecting to /home`);
-    // Non-admin trying to access admin page
-    return NextResponse.redirect(new URL("/home", request.url));
+  if (pathname.startsWith("/admin")) {
+    // Get user role from database
+    const { data: userData } = await supabase.from("User").select("role").eq("email", user.email).single();
+
+    if (userData?.role !== "ADMIN") {
+      console.log(`[Middleware] Non-admin trying to access admin, redirecting to /home`);
+      return NextResponse.redirect(new URL("/home", request.url));
+    }
   }
 
-  return NextResponse.next();
+  console.log(`[Middleware] Valid user: ${user.email}`);
+
+  return response;
 }
 
 export const config = {

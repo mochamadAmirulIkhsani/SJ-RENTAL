@@ -7,7 +7,6 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Alert } from "@/components/ui/alert";
-import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 
 export default function RegisterPage() {
   const router = useRouter();
@@ -80,39 +79,40 @@ export default function RegisterPage() {
             {error && <Alert variant="destructive">{error}</Alert>}
             <div className="space-y-2">
               <Label htmlFor="name">Nama Lengkap</Label>
-              <Input id="name" type="text" placeholder="John Doe" value={formData.name} onChange={(e) => setFormData({ ...formData, name: e.target.value })} disabled={loading} />
+              <Input id="name" type="text" placeholder="John Doe" value={formData.name} onChange={(e) => setFormData({ ...formData, name: e.target.value })} required disabled={loading} autoComplete="name" />
             </div>
             <div className="space-y-2">
               <Label htmlFor="email">Email</Label>
-              <Input id="email" type="email" placeholder="nama@email.com" value={formData.email} onChange={(e) => setFormData({ ...formData, email: e.target.value })} required disabled={loading} />
+              <Input id="email" type="email" placeholder="nama@email.com" value={formData.email} onChange={(e) => setFormData({ ...formData, email: e.target.value })} required disabled={loading} autoComplete="email" />
             </div>
             <div className="space-y-2">
               <Label htmlFor="password">Password</Label>
-              <Input id="password" type="password" placeholder="Minimal 6 karakter" value={formData.password} onChange={(e) => setFormData({ ...formData, password: e.target.value })} required disabled={loading} />
+              <Input
+                id="password"
+                type="password"
+                placeholder="Minimal 6 karakter"
+                value={formData.password}
+                onChange={(e) => setFormData({ ...formData, password: e.target.value })}
+                required
+                disabled={loading}
+                autoComplete="new-password"
+              />
             </div>
             <div className="space-y-2">
               <Label htmlFor="confirmPassword">Konfirmasi Password</Label>
-              <Input id="confirmPassword" type="password" placeholder="Ketik ulang password" value={formData.confirmPassword} onChange={(e) => setFormData({ ...formData, confirmPassword: e.target.value })} required disabled={loading} />
-            </div>
-            <div className="space-y-2">
-              <Label>Daftar Sebagai</Label>
-              <RadioGroup value={formData.role} onValueChange={(value) => setFormData({ ...formData, role: value })} disabled={loading}>
-                <div className="flex items-center space-x-2">
-                  <RadioGroupItem value="CUSTOMER" id="customer" />
-                  <Label htmlFor="customer" className="font-normal">
-                    Customer
-                  </Label>
-                </div>
-                <div className="flex items-center space-x-2">
-                  <RadioGroupItem value="ADMIN" id="admin" />
-                  <Label htmlFor="admin" className="font-normal">
-                    Admin
-                  </Label>
-                </div>
-              </RadioGroup>
+              <Input
+                id="confirmPassword"
+                type="password"
+                placeholder="Ketik ulang password"
+                value={formData.confirmPassword}
+                onChange={(e) => setFormData({ ...formData, confirmPassword: e.target.value })}
+                required
+                disabled={loading}
+                autoComplete="new-password"
+              />
             </div>
           </CardContent>
-          <CardFooter className="flex flex-col space-y-4">
+          <CardFooter className="flex flex-col space-y-4 pt-6">
             <Button type="submit" className="w-full" disabled={loading}>
               {loading ? "Loading..." : "Daftar"}
             </Button>

@@ -3,9 +3,10 @@
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { User, Menu, LogOut } from "lucide-react";
-import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
+import { Sheet, SheetContent, SheetTrigger, SheetTitle } from "@/components/ui/sheet";
 import { useAuth } from "@/lib/AuthContext";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
+import { VisuallyHidden } from "@radix-ui/react-visually-hidden";
 
 export function CustomerNavbar() {
   const { user, logout } = useAuth();
@@ -82,6 +83,9 @@ export function CustomerNavbar() {
               </Button>
             </SheetTrigger>
             <SheetContent>
+              <VisuallyHidden>
+                <SheetTitle>Navigation Menu</SheetTitle>
+              </VisuallyHidden>
               <div className="mt-8 flex flex-col space-y-4">
                 <Link href="/" className="text-sm font-medium transition-colors hover:text-accent">
                   Home
