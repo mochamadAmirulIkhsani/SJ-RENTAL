@@ -327,8 +327,10 @@ export default function BookingManagementPage() {
                   <CardContent className="space-y-4">
                     {bookings.slice(0, 3).map((booking) => (
                       <div key={booking.id} className="p-4 border rounded-lg">
-                        <p className="font-semibold text-sm mb-1">{booking.customer}</p>
-                        <p className="text-sm text-gray-600 mb-2">{booking.motor}</p>
+                        <p className="font-semibold text-sm mb-1">{booking.user.name || booking.user.email}</p>
+                        <p className="text-sm text-gray-600 mb-2">
+                          {booking.motor.brand} {booking.motor.name}
+                        </p>
                         <Badge
                           style={{
                             backgroundColor: booking.status === "Active" ? "#1ABC9C" : "#F59E0B",
@@ -366,10 +368,14 @@ export default function BookingManagementPage() {
                       {bookings.map((booking) => (
                         <TableRow key={booking.id}>
                           <TableCell className="font-medium">{booking.id}</TableCell>
-                          <TableCell>{booking.customer}</TableCell>
-                          <TableCell>{booking.motor}</TableCell>
-                          <TableCell>{booking.pickupDate}</TableCell>
-                          <TableCell>{booking.assigned ? <Badge style={{ backgroundColor: "#1ABC9C" }}>{booking.assigned}</Badge> : <Badge variant="outline">Not Assigned</Badge>}</TableCell>
+                          <TableCell>{booking.user.name || booking.user.email}</TableCell>
+                          <TableCell>
+                            {booking.motor.brand} {booking.motor.name}
+                          </TableCell>
+                          <TableCell>{format(new Date(booking.startDate), "PPP")}</TableCell>
+                          <TableCell>
+                            <Badge variant="outline">Not Assigned</Badge>
+                          </TableCell>
                           <TableCell>
                             <Select>
                               <SelectTrigger className="w-32">
