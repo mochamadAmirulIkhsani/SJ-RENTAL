@@ -6,7 +6,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Badge } from "@/components/ui/badge";
 import { CheckCircle2, Clock, XCircle, Loader2, Download, Home } from "lucide-react";
 import { useSearchParams, useRouter } from "next/navigation";
-import { useEffect, useState } from "react";
+import { useEffect, useState, Suspense } from "react";
 import { format } from "date-fns";
 
 interface Booking {
@@ -32,7 +32,7 @@ interface Booking {
   };
 }
 
-export default function ConfirmationPage() {
+function ConfirmationContent() {
   const searchParams = useSearchParams();
   const router = useRouter();
   const bookingCode = searchParams.get("booking");
@@ -282,5 +282,27 @@ export default function ConfirmationPage() {
         </div>
       </div>
     </div>
+  );
+}
+
+export default function ConfirmationPage() {
+  return (
+    <Suspense
+      fallback={
+        <div className="min-h-screen bg-gray-50">
+          <CustomerNavbar />
+          <div className="container mx-auto px-3 sm:px-4 py-12 flex items-center justify-center">
+            <Card className="max-w-md w-full">
+              <CardContent className="flex flex-col items-center justify-center py-12">
+                <Loader2 className="h-12 w-12 animate-spin text-gray-400 mb-4" />
+                <p className="text-gray-600">Loading booking details...</p>
+              </CardContent>
+            </Card>
+          </div>
+        </div>
+      }
+    >
+      <ConfirmationContent />
+    </Suspense>
   );
 }
