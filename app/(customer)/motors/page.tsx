@@ -80,7 +80,7 @@ export default function MotorsPage() {
     <div className="min-h-screen bg-gray-50">
       <CustomerNavbar />
 
-      <div className="container mx-auto px-4 py-8">
+      <main className="container mx-auto px-4 py-8">
         <div className="mb-8">
           <h1 className="text-4xl font-bold mb-2" style={{ color: "#0A2540" }}>
             Available Motors
@@ -152,7 +152,16 @@ export default function MotorsPage() {
             motors.map((motor) => (
               <Card key={motor.id} className="overflow-hidden hover:shadow-lg transition-shadow">
                 <div className="h-48 bg-gray-200 flex items-center justify-center relative overflow-hidden">
-                  {motor.image ? <img src={motor.image} alt={motor.name} className="w-full h-full object-cover" /> : <Bike className="h-20 w-20 text-gray-400" />}
+                  {motor.image ? (
+                    <img
+                      src={motor.image}
+                      alt={`${motor.brand} ${motor.model} ${motor.year} - ${motor.type} ${motor.cc} motorcycle for rent at ${formatPrice(motor.pricePerDay)} IDR per day in ${motor.location}`}
+                      className="w-full h-full object-cover"
+                      loading="lazy"
+                    />
+                  ) : (
+                    <Bike className="h-20 w-20 text-gray-400" aria-label="Default motorcycle icon" />
+                  )}
                   <Badge className="absolute top-4 right-4" style={{ backgroundColor: motor.status === "Available" ? "#1ABC9C" : "#6B7280" }}>
                     {motor.status}
                   </Badge>
@@ -180,7 +189,7 @@ export default function MotorsPage() {
             ))
           )}
         </div>
-      </div>
+      </main>
     </div>
   );
 }

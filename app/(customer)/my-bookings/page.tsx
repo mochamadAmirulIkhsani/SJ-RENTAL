@@ -1,290 +1,360 @@
 "use client";
 
 import { CustomerNavbar } from "@/components/customer-navbar";
-import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Calendar, FileText, Clock, MapPin, Phone, X } from "lucide-react";
-import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { Button } from "@/components/ui/button";
+import { Loader2, Calendar, Clock, MapPin, CreditCard, Package, AlertCircle } from "lucide-react";
+import { useState, useEffect } from "react";
+import { useAuth } from "@/lib/AuthContext";
+import { useRouter } from "next/navigation";
+import { format } from "date-fns";
 
-const activeBookings = [
-  {
-    id: "SJ-2025-00123",
-    motor: "Honda Vario 160",
-    pickupDate: "Dec 10, 2025",
-    returnDate: "Dec 13, 2025",
-    status: "Active",
-    total: "297,000",
-    location: "Central Jakarta Office",
-  },
-  {
-    id: "SJ-2025-00089",
-    motor: "Yamaha NMAX",
-    pickupDate: "Dec 8, 2025",
-    returnDate: "Dec 15, 2025",
-    status: "Active",
-    total: "525,000",
-    location: "South Jakarta Branch",
-  },
-];
+declare global {
+  interface Window {
+    snap: any;
+  }
+}
 
-const upcomingBookings = [
-  {
-    id: "SJ-2025-00156",
-    motor: "Honda PCX",
-    pickupDate: "Dec 20, 2025",
-    returnDate: "Dec 27, 2025",
-    status: "Confirmed",
-    total: "560,000",
-    location: "Central Jakarta Office",
-  },
-];
-
-const pastBookings = [
-  {
-    id: "SJ-2025-00045",
-    motor: "Yamaha Mio",
-    pickupDate: "Nov 15, 2025",
-    returnDate: "Nov 18, 2025",
-    status: "Completed",
-    total: "165,000",
-    location: "North Jakarta Branch",
-  },
-  {
-    id: "SJ-2024-00891",
-    motor: "Honda Beat",
-    pickupDate: "Oct 5, 2024",
-    returnDate: "Oct 7, 2024",
-    status: "Completed",
-    total: "100,000",
-    location: "Central Jakarta Office",
-  },
-];
+interface Booking {
+  id: number;
+  bookingCode: string;
+  startDate: string;
+  endDate: string;
+  totalDays: number;
+  totalPrice: number;
+  status: string;
+  paymentStatus: string;
+  paymentMethod: string | null;
+  paymentUrl: string | null;
+  transactionId: string | null;
+  notes: string | null;
+  createdAt: string;
+  motor: {
+    id: number;
+    name: string;
+    brand: string;
+    model: string;
+    plateNumber: string;
+    image: string | null;
+    pricePerDay: number;
+  };
+}
 
 export default function MyBookingsPage() {
+  const [bookings, setBookings] = useState<Booking[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [filter, setFilter] = useState<string>("all");
+  const [payingBooking, setPayingBooking] = useState<number | null>(null);
+  const { user } = useAuth();
+  const router = useRouter();
+
+  useEffect(() => {
+    if (!user) {
+      router.push("/login");
+      return;
+    }
+    fetchBookings();
+  }, [user, router]);
+
+  // Load Midtrans Snap script
+  useEffect(() => {
+    const snapScript = "https://app.sandbox.midtrans.com/snap/snap.js";
+    const clientKey = process.env.NEXT_PUBLIC_MIDTRANS_CLIENT_KEY;
+
+    const script = document.createElement("script");
+    script.src = snapScript;
+    script.setAttribute("data-client-key", clientKey || "");
+    script.async = true;
+
+    document.body.appendChild(script);
+
+    return () => {
+      document.body.removeChild(script);
+    };
+  }, []);
+
+  const fetchBookings = async () => {
+    if (!user) return;
+
+    try {
+      setLoading(true);
+      const response = await fetch(`/api/bookings?userId=${user.id}`);
+      const data = await response.json();
+
+      if (response.ok) {
+        setBookings(data.bookings || []);
+      } else {
+        console.error("Failed to fetch bookings:", data.error);
+      }
+    } catch (error) {
+      console.error("Error fetching bookings:", error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const getStatusColor = (status: string) => {
+    switch (status) {
+      case "Pending":
+        return "bg-yellow-100 text-yellow-800 border-yellow-300";
+      case "Paid":
+        return "bg-blue-100 text-blue-800 border-blue-300";
+      case "Active":
+        return "bg-green-100 text-green-800 border-green-300";
+      case "Completed":
+        return "bg-gray-100 text-gray-800 border-gray-300";
+      case "Cancelled":
+        return "bg-red-100 text-red-800 border-red-300";
+      default:
+        return "bg-gray-100 text-gray-800 border-gray-300";
+    }
+  };
+
+  const getPaymentStatusColor = (status: string) => {
+    switch (status) {
+      case "Paid":
+        return "bg-green-100 text-green-800 border-green-300";
+      case "Unpaid":
+        return "bg-red-100 text-red-800 border-red-300";
+      case "Refunded":
+        return "bg-purple-100 text-purple-800 border-purple-300";
+      default:
+        return "bg-gray-100 text-gray-800 border-gray-300";
+    }
+  };
+
+  const filteredBookings = bookings.filter((booking) => {
+    if (filter === "all") return true;
+    return booking.status === filter;
+  });
+
+  const handleViewDetails = (bookingCode: string) => {
+    router.push(`/confirmation?booking=${bookingCode}`);
+  };
+
+  const handlePayNow = async (booking: Booking) => {
+    try {
+      setPayingBooking(booking.id);
+
+      // Get payment token from API
+      const response = await fetch(`/api/bookings/${booking.bookingCode}/payment`, {
+        method: "POST",
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        alert(data.error || "Failed to initiate payment");
+        setPayingBooking(null);
+        return;
+      }
+
+      // Open Midtrans Snap payment
+      if (window.snap && data.token) {
+        window.snap.pay(data.token, {
+          onSuccess: function (result: any) {
+            alert("Payment successful!");
+            fetchBookings(); // Refresh bookings
+            setPayingBooking(null);
+          },
+          onPending: function (result: any) {
+            alert("Waiting for payment confirmation...");
+            fetchBookings(); // Refresh bookings
+            setPayingBooking(null);
+          },
+          onError: function (result: any) {
+            alert("Payment failed! Please try again.");
+            setPayingBooking(null);
+          },
+          onClose: function () {
+            setPayingBooking(null);
+          },
+        });
+      } else {
+        alert("Payment gateway not available");
+        setPayingBooking(null);
+      }
+    } catch (error) {
+      console.error("Payment error:", error);
+      alert("Failed to process payment");
+      setPayingBooking(null);
+    }
+  };
+
+  if (!user) {
+    return null;
+  }
+
   return (
     <div className="min-h-screen bg-gray-50">
       <CustomerNavbar />
 
-      <div className="container mx-auto px-4 py-8">
-        <div className="mb-8">
-          <h1 className="text-4xl font-bold mb-2" style={{ color: "#0A2540" }}>
-            My Bookings
-          </h1>
-          <p className="text-gray-600">View and manage your rental reservations</p>
-        </div>
+      <div className="container mx-auto px-3 sm:px-4 py-6 sm:py-8">
+        <div className="max-w-6xl mx-auto">
+          {/* Header */}
+          <div className="mb-6 sm:mb-8">
+            <h1 className="text-2xl sm:text-3xl lg:text-4xl font-bold mb-2" style={{ color: "#0A2540" }}>
+              My Bookings
+            </h1>
+            <p className="text-sm sm:text-base text-gray-600">View and manage your motorcycle rental bookings</p>
+          </div>
 
-        <Tabs defaultValue="active" className="space-y-6">
-          <TabsList>
-            <TabsTrigger value="active">Active ({activeBookings.length})</TabsTrigger>
-            <TabsTrigger value="upcoming">Upcoming ({upcomingBookings.length})</TabsTrigger>
-            <TabsTrigger value="past">Past ({pastBookings.length})</TabsTrigger>
-          </TabsList>
+          {/* Filter Tabs */}
+          <div className="mb-6 flex flex-wrap gap-2">
+            <Button variant={filter === "all" ? "default" : "outline"} onClick={() => setFilter("all")} size="sm">
+              All Bookings
+            </Button>
+            <Button variant={filter === "Pending" ? "default" : "outline"} onClick={() => setFilter("Pending")} size="sm">
+              Pending
+            </Button>
+            <Button variant={filter === "Paid" ? "default" : "outline"} onClick={() => setFilter("Paid")} size="sm">
+              Paid
+            </Button>
+            <Button variant={filter === "Active" ? "default" : "outline"} onClick={() => setFilter("Active")} size="sm">
+              Active
+            </Button>
+            <Button variant={filter === "Completed" ? "default" : "outline"} onClick={() => setFilter("Completed")} size="sm">
+              Completed
+            </Button>
+          </div>
 
-          <TabsContent value="active" className="space-y-4">
-            {activeBookings.map((booking) => (
-              <Card key={booking.id} className="hover:shadow-lg transition-shadow">
-                <CardHeader>
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <CardTitle className="text-xl">{booking.motor}</CardTitle>
-                      <CardDescription className="flex items-center gap-2 mt-1">
-                        <span>{booking.id}</span>
-                        <span>•</span>
-                        <span className="flex items-center">
-                          <MapPin className="h-3 w-3 mr-1" />
-                          {booking.location}
-                        </span>
-                      </CardDescription>
-                    </div>
-                    <Badge style={{ backgroundColor: "#1ABC9C" }}>{booking.status}</Badge>
-                  </div>
-                </CardHeader>
-                <CardContent>
-                  <div className="grid md:grid-cols-4 gap-4 mb-4">
-                    <div>
-                      <p className="text-sm text-gray-600 mb-1 flex items-center">
-                        <Calendar className="h-4 w-4 mr-1" />
-                        Pickup Date
-                      </p>
-                      <p className="font-semibold">{booking.pickupDate}</p>
-                    </div>
-                    <div>
-                      <p className="text-sm text-gray-600 mb-1 flex items-center">
-                        <Calendar className="h-4 w-4 mr-1" />
-                        Return Date
-                      </p>
-                      <p className="font-semibold">{booking.returnDate}</p>
-                    </div>
-                    <div>
-                      <p className="text-sm text-gray-600 mb-1">Total Paid</p>
-                      <p className="font-semibold text-lg" style={{ color: "#0A2540" }}>
-                        Rp {booking.total}
-                      </p>
-                    </div>
-                    <div className="flex items-end gap-2">
-                      <Dialog>
-                        <DialogTrigger asChild>
-                          <Button variant="outline" size="sm">
-                            <FileText className="h-4 w-4 mr-2" />
-                            Details
-                          </Button>
-                        </DialogTrigger>
-                        <DialogContent className="max-w-2xl">
-                          <DialogHeader>
-                            <DialogTitle>Booking Details - {booking.id}</DialogTitle>
-                            <DialogDescription>Complete information about your rental</DialogDescription>
-                          </DialogHeader>
-                          <div className="space-y-4">
-                            <div className="grid grid-cols-2 gap-4">
-                              <div>
-                                <p className="text-sm text-gray-600">Motor</p>
-                                <p className="font-semibold">{booking.motor}</p>
-                              </div>
-                              <div>
-                                <p className="text-sm text-gray-600">Status</p>
-                                <Badge style={{ backgroundColor: "#1ABC9C" }}>{booking.status}</Badge>
-                              </div>
-                              <div>
-                                <p className="text-sm text-gray-600">Pickup Date</p>
-                                <p className="font-semibold">{booking.pickupDate}</p>
-                              </div>
-                              <div>
-                                <p className="text-sm text-gray-600">Return Date</p>
-                                <p className="font-semibold">{booking.returnDate}</p>
-                              </div>
-                              <div>
-                                <p className="text-sm text-gray-600">Location</p>
-                                <p className="font-semibold">{booking.location}</p>
-                              </div>
-                              <div>
-                                <p className="text-sm text-gray-600">Total</p>
-                                <p className="font-semibold">Rp {booking.total}</p>
-                              </div>
-                            </div>
-                            <div className="pt-4 border-t">
-                              <p className="text-sm text-gray-600 mb-2">Emergency Contact</p>
-                              <p className="flex items-center">
-                                <Phone className="h-4 w-4 mr-2" />
-                                +62 812 3456 7890
+          {/* Loading State */}
+          {loading ? (
+            <div className="flex items-center justify-center py-20">
+              <Loader2 className="h-8 w-8 animate-spin text-gray-400" />
+            </div>
+          ) : filteredBookings.length === 0 ? (
+            <Card>
+              <CardContent className="py-20 text-center">
+                <Package className="h-16 w-16 mx-auto text-gray-300 mb-4" />
+                <h3 className="text-lg font-semibold mb-2">No Bookings Found</h3>
+                <p className="text-gray-600 mb-6">{filter === "all" ? "You haven't made any bookings yet." : `No ${filter.toLowerCase()} bookings found.`}</p>
+                <Button onClick={() => router.push("/booking")} style={{ backgroundColor: "#1ABC9C" }}>
+                  Book a Motor
+                </Button>
+              </CardContent>
+            </Card>
+          ) : (
+            <div className="space-y-4">
+              {filteredBookings.map((booking) => (
+                <Card key={booking.id} className="overflow-hidden hover:shadow-lg transition-shadow">
+                  <CardContent className="p-0">
+                    <div className="grid md:grid-cols-[200px_1fr] gap-4">
+                      {/* Motor Image */}
+                      <div className="relative h-48 md:h-full bg-gray-100">
+                        {booking.motor.image ? (
+                          <img src={booking.motor.image} alt={booking.motor.name} className="w-full h-full object-cover" />
+                        ) : (
+                          <div className="w-full h-full flex items-center justify-center text-gray-400">
+                            <Package className="h-16 w-16" />
+                          </div>
+                        )}
+                      </div>
+
+                      {/* Booking Details */}
+                      <div className="p-4 sm:p-6">
+                        <div className="flex flex-wrap items-start justify-between gap-2 mb-4">
+                          <div>
+                            <h3 className="text-lg sm:text-xl font-bold">
+                              {booking.motor.brand} {booking.motor.model}
+                            </h3>
+                            <p className="text-sm text-gray-600">{booking.motor.plateNumber}</p>
+                            <p className="text-xs text-gray-500 mt-1">Booking Code: {booking.bookingCode}</p>
+                          </div>
+                          <div className="flex flex-wrap gap-2">
+                            <Badge className={getStatusColor(booking.status)}>{booking.status}</Badge>
+                            <Badge className={getPaymentStatusColor(booking.paymentStatus)}>{booking.paymentStatus}</Badge>
+                          </div>
+                        </div>
+
+                        {/* Rental Period */}
+                        <div className="grid sm:grid-cols-2 gap-4 mb-4">
+                          <div className="flex items-start gap-2">
+                            <Calendar className="h-5 w-5 text-gray-400 mt-0.5" />
+                            <div>
+                              <p className="text-xs text-gray-500 mb-1">Rental Period</p>
+                              <p className="text-sm font-medium">
+                                {format(new Date(booking.startDate), "PPP")} - {format(new Date(booking.endDate), "PPP")}
                               </p>
                             </div>
                           </div>
-                        </DialogContent>
-                      </Dialog>
-                      <Button size="sm" style={{ backgroundColor: "#1ABC9C" }}>
-                        <Clock className="h-4 w-4 mr-2" />
-                        Extend
-                      </Button>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-            ))}
-          </TabsContent>
 
-          <TabsContent value="upcoming" className="space-y-4">
-            {upcomingBookings.map((booking) => (
-              <Card key={booking.id} className="hover:shadow-lg transition-shadow">
-                <CardHeader>
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <CardTitle className="text-xl">{booking.motor}</CardTitle>
-                      <CardDescription className="flex items-center gap-2 mt-1">
-                        <span>{booking.id}</span>
-                        <span>•</span>
-                        <span className="flex items-center">
-                          <MapPin className="h-3 w-3 mr-1" />
-                          {booking.location}
-                        </span>
-                      </CardDescription>
-                    </div>
-                    <Badge variant="outline">{booking.status}</Badge>
-                  </div>
-                </CardHeader>
-                <CardContent>
-                  <div className="grid md:grid-cols-4 gap-4 mb-4">
-                    <div>
-                      <p className="text-sm text-gray-600 mb-1 flex items-center">
-                        <Calendar className="h-4 w-4 mr-1" />
-                        Pickup Date
-                      </p>
-                      <p className="font-semibold">{booking.pickupDate}</p>
-                    </div>
-                    <div>
-                      <p className="text-sm text-gray-600 mb-1 flex items-center">
-                        <Calendar className="h-4 w-4 mr-1" />
-                        Return Date
-                      </p>
-                      <p className="font-semibold">{booking.returnDate}</p>
-                    </div>
-                    <div>
-                      <p className="text-sm text-gray-600 mb-1">Total</p>
-                      <p className="font-semibold text-lg" style={{ color: "#0A2540" }}>
-                        Rp {booking.total}
-                      </p>
-                    </div>
-                    <div className="flex items-end gap-2">
-                      <Button variant="outline" size="sm">
-                        <FileText className="h-4 w-4 mr-2" />
-                        Details
-                      </Button>
-                      <Button variant="outline" size="sm">
-                        <X className="h-4 w-4 mr-2" />
-                        Cancel
-                      </Button>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-            ))}
-          </TabsContent>
+                          <div className="flex items-start gap-2">
+                            <Clock className="h-5 w-5 text-gray-400 mt-0.5" />
+                            <div>
+                              <p className="text-xs text-gray-500 mb-1">Duration</p>
+                              <p className="text-sm font-medium">
+                                {booking.totalDays} {booking.totalDays === 1 ? "day" : "days"}
+                              </p>
+                            </div>
+                          </div>
+                        </div>
 
-          <TabsContent value="past">
-            <Card>
-              <CardHeader>
-                <CardTitle>Past Bookings</CardTitle>
-                <CardDescription>Your rental history</CardDescription>
-              </CardHeader>
-              <CardContent>
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead>Booking ID</TableHead>
-                      <TableHead>Motor</TableHead>
-                      <TableHead>Pickup Date</TableHead>
-                      <TableHead>Return Date</TableHead>
-                      <TableHead>Status</TableHead>
-                      <TableHead>Total</TableHead>
-                      <TableHead>Actions</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {pastBookings.map((booking) => (
-                      <TableRow key={booking.id}>
-                        <TableCell className="font-medium">{booking.id}</TableCell>
-                        <TableCell>{booking.motor}</TableCell>
-                        <TableCell>{booking.pickupDate}</TableCell>
-                        <TableCell>{booking.returnDate}</TableCell>
-                        <TableCell>
-                          <Badge variant="secondary">{booking.status}</Badge>
-                        </TableCell>
-                        <TableCell className="font-semibold">Rp {booking.total}</TableCell>
-                        <TableCell>
-                          <Button variant="ghost" size="sm">
-                            <FileText className="h-4 w-4" />
-                          </Button>
-                        </TableCell>
-                      </TableRow>
-                    ))}
-                  </TableBody>
-                </Table>
-              </CardContent>
-            </Card>
-          </TabsContent>
-        </Tabs>
+                        {/* Price and Actions */}
+                        <div className="flex flex-wrap items-center justify-between gap-4 pt-4 border-t">
+                          <div>
+                            <p className="text-xs text-gray-500 mb-1">Total Price</p>
+                            <p className="text-xl font-bold" style={{ color: "#0A2540" }}>
+                              Rp {booking.totalPrice.toLocaleString("id-ID")}
+                            </p>
+                          </div>
+                          <div className="flex gap-2">
+                            {booking.paymentStatus === "Unpaid" && booking.status === "Pending" && (
+                              <Button onClick={() => handlePayNow(booking)} disabled={payingBooking === booking.id} style={{ backgroundColor: "#1ABC9C" }} size="sm">
+                                {payingBooking === booking.id ? (
+                                  <>
+                                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                                    Processing...
+                                  </>
+                                ) : (
+                                  <>
+                                    <CreditCard className="mr-2 h-4 w-4" />
+                                    Pay Now
+                                  </>
+                                )}
+                              </Button>
+                            )}
+                            <Button variant="outline" size="sm" onClick={() => handleViewDetails(booking.bookingCode)}>
+                              View Details
+                            </Button>
+                          </div>
+                        </div>
+
+                        {/* Unpaid Warning */}
+                        {booking.paymentStatus === "Unpaid" && booking.status === "Pending" && (
+                          <div className="mt-4 pt-4 border-t">
+                            <div className="bg-amber-50 border border-amber-200 rounded-lg p-3 flex items-start gap-3">
+                              <AlertCircle className="h-5 w-5 text-amber-600 shrink-0 mt-0.5" />
+                              <div>
+                                <p className="text-sm font-medium text-amber-900 mb-1">Payment Required</p>
+                                <p className="text-xs text-amber-700 mb-2">Please complete payment to confirm your booking. You can pay using various methods including QRIS, Bank Transfer, Credit Card, and e-Wallet.</p>
+                                <div className="flex flex-wrap gap-2 text-xs text-amber-600">
+                                  <span className="inline-flex items-center gap-1">💳 Credit/Debit Card</span>
+                                  <span className="inline-flex items-center gap-1">🏦 Bank Transfer</span>
+                                  <span className="inline-flex items-center gap-1">📱 QRIS</span>
+                                  <span className="inline-flex items-center gap-1">💰 e-Wallet (GoPay, OVO, Dana)</span>
+                                </div>
+                              </div>
+                            </div>
+                          </div>
+                        )}
+
+                        {/* Notes */}
+                        {booking.notes && (
+                          <div className="mt-4 pt-4 border-t">
+                            <p className="text-xs text-gray-500 mb-1">Notes</p>
+                            <p className="text-sm text-gray-700">{booking.notes}</p>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
+          )}
+        </div>
       </div>
     </div>
   );
