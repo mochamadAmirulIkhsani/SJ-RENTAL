@@ -1,0 +1,112 @@
+/* Custom Calendar Styles for Booking System */
+
+/* Booked dates styling */
+.rdp-day_button.booked {
+  background-color: #fee2e2 !important;
+  color: #991b1b !important;
+  text-decoration: line-through !important;
+  opacity: 0.5 !important;
+  cursor: not-allowed !important;
+  position: relative;
+}
+
+.rdp-day_button.booked::after {
+  content: '❌';
+  position: absolute;
+  top: 2px;
+  right: 2px;
+  font-size: 10px;
+}
+
+.rdp-day_button.booked:hover {
+  background-color: #fecaca !important;
+  transform: none !important;
+}
+
+/* Available dates styling */
+.rdp-day_button:not(.booked):not([disabled]) {
+  position: relative;
+}
+
+.rdp-day_button:not(.booked):not([disabled])::before {
+  content: '✓';
+  position: absolute;
+  top: 2px;
+  right: 2px;
+  font-size: 10px;
+  color: #16a34a;
+  opacity: 0;
+  transition: opacity 0.2s;
+}
+
+.rdp-day_button:not(.booked):not([disabled]):hover::before {
+  opacity: 1;
+}
+
+/* Selected date enhancement */
+.rdp-day_button[data-selected="true"]:not(.booked) {
+  background-color: #10b981 !important;
+  color: white !important;
+  font-weight: 600;
+  box-shadow: 0 2px 8px rgba(16, 185, 129, 0.3);
+}
+
+/* Today indicator */
+.rdp-day_button[data-today="true"]:not(.booked):not([data-selected="true"]) {
+  border: 2px solid #3b82f6;
+  font-weight: 600;
+}
+
+/* Disabled past dates */
+.rdp-day_button[disabled]:not(.booked) {
+  opacity: 0.3;
+  cursor: not-allowed;
+}
+
+/* Hover effect for available dates */
+.rdp-day_button:not(.booked):not([disabled]):hover {
+  background-color: #d1fae5 !important;
+  transform: scale(1.05);
+  transition: all 0.2s ease;
+}
+
+/* Calendar header */
+.rdp-caption {
+  font-weight: 600;
+  color: #1f2937;
+  margin-bottom: 1rem;
+}
+
+/* Week days header */
+.rdp-weekdays {
+  color: #6b7280;
+  font-weight: 500;
+  font-size: 0.75rem;
+}
+
+/* Month navigation buttons */
+.rdp-button_previous,
+.rdp-button_next {
+  color: #6366f1;
+}
+
+.rdp-button_previous:hover,
+.rdp-button_next:hover {
+  background-color: #eef2ff;
+}
+
+/* Animation for calendar appearance */
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.rdp {
+  animation: fadeIn 0.3s ease-out;
+}

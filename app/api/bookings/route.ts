@@ -75,6 +75,37 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "End date must be after start date" }, { status: 400 });
     }
 
+    // CHECK FOR DOUBLE BOOKING - Critical validation
+    console.log("Checking for double booking conflicts...");
+    console.log("Motor ID:", motorId);
+    console.log("Requested Period:", start.toISOString(), "to", end.toISOString());
+
+    const { data: conflictingBookings, error: conflictError } = await supabase
+      .from("Booking")
+      .select("id, bookingCode, startDate, endDate, status")
+      .eq("motorId", motorId)
+      .or(`status.eq.Pending,status.eq.Paid,status.eq.Active`)
+      .lt("startDate", end.toISOString())
+      .gt("endDate", start.toISOString());
+
+    if (conflictError) {
+      console.error("Error checking for conflicts:", conflictError);
+      return NextResponse.json({ error: "Failed to check booking availability" }, { status: 500 });
+    }
+
+    if (conflictingBookings && conflictingBookings.length > 0) {
+      console.log("Booking conflict detected!", conflictingBookings);
+      return NextResponse.json(
+        {
+          error: "This motor is already booked for the selected period. Please choose different dates or another motor.",
+          conflicts: conflictingBookings,
+        },
+        { status: 409 }
+      ); // 409 Conflict
+    }
+
+    console.log("No conflicts found, proceeding with booking creation");
+
     const totalPrice = parseFloat(motor.pricePerDay.toString()) * totalDays;
 
     // Generate booking code
@@ -109,8 +140,21 @@ export async function POST(request: NextRequest) {
 
     if (bookingError || !booking) {
       console.error("Booking creation error:", bookingError);
+
+      // Check if it's a conflict error (race condition)
+      if (bookingError?.message?.includes("duplicate") || bookingError?.message?.includes("conflict")) {
+        return NextResponse.json(
+          {
+            error: "This motor was just booked by another user. Please select different dates or another motor.",
+          },
+          { status: 409 }
+        );
+      }
+
       return NextResponse.json({ error: "Failed to create booking" }, { status: 500 });
     }
+
+    console.log("Booking created successfully:", bookingCode);
 
     // Create Midtrans transaction
     const midtransResponse = await fetch("https://app.sandbox.midtrans.com/snap/v1/transactions", {

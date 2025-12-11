@@ -3,20 +3,23 @@ import { createClient } from "@supabase/supabase-js";
 
 const supabase = createClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.SUPABASE_SERVICE_ROLE_KEY!);
 
-// PATCH - Update booking status
-export async function PATCH(request: NextRequest, context: { params: Promise<{ id: string }> }) {
+// PATCH - Update booking status (works with both ID and bookingCode)
+export async function PATCH(request: NextRequest, { params }: { params: Promise<{ bookingCode: string }> }) {
   try {
-    const { id } = await context.params;
+    const { bookingCode } = await params;
     const body = await request.json();
     const { status } = body;
-    const bookingId = parseInt(id);
 
     if (!status) {
       return NextResponse.json({ error: "Status is required" }, { status: 400 });
     }
 
+    // Check if it's a numeric ID or bookingCode
+    const isNumericId = /^\d+$/.test(bookingCode);
+
     // Get current booking
-    const { data: booking, error: fetchError } = await supabase.from("Booking").select("*, motor:Motor(*)").eq("id", bookingId).single();
+    const query = supabase.from("Booking").select("*, motor:Motor(*)");
+    const { data: booking, error: fetchError } = isNumericId ? await query.eq("id", parseInt(bookingCode)).single() : await query.eq("bookingCode", bookingCode).single();
 
     if (fetchError || !booking) {
       return NextResponse.json({ error: "Booking not found" }, { status: 404 });
@@ -29,7 +32,7 @@ export async function PATCH(request: NextRequest, context: { params: Promise<{ i
         status: status,
         updatedAt: new Date().toISOString(),
       })
-      .eq("id", bookingId)
+      .eq("id", booking.id)
       .select("*")
       .single();
 
@@ -65,14 +68,17 @@ export async function PATCH(request: NextRequest, context: { params: Promise<{ i
   }
 }
 
-// DELETE - Cancel/Delete booking
-export async function DELETE(request: NextRequest, context: { params: Promise<{ id: string }> }) {
+// DELETE - Cancel/Delete booking (works with both ID and bookingCode)
+export async function DELETE(request: NextRequest, { params }: { params: Promise<{ bookingCode: string }> }) {
   try {
-    const { id } = await context.params;
-    const bookingId = parseInt(id);
+    const { bookingCode } = await params;
+
+    // Check if it's a numeric ID or bookingCode
+    const isNumericId = /^\d+$/.test(bookingCode);
 
     // Get booking details first
-    const { data: booking, error: fetchError } = await supabase.from("Booking").select("*").eq("id", bookingId).single();
+    const query = supabase.from("Booking").select("*");
+    const { data: booking, error: fetchError } = isNumericId ? await query.eq("id", parseInt(bookingCode)).single() : await query.eq("bookingCode", bookingCode).single();
 
     if (fetchError || !booking) {
       return NextResponse.json({ error: "Booking not found" }, { status: 404 });
@@ -85,7 +91,7 @@ export async function DELETE(request: NextRequest, context: { params: Promise<{ 
         status: "Cancelled",
         updatedAt: new Date().toISOString(),
       })
-      .eq("id", bookingId);
+      .eq("id", booking.id);
 
     if (updateError) {
       return NextResponse.json({ error: "Failed to cancel booking" }, { status: 500 });
